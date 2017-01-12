@@ -6,6 +6,7 @@ const morgan = require('morgan');
 // running locally. On Gomix, .env files
 // are automatically loaded.
 require('dotenv').config();
+const {sendEmail} = require('./emailer.js');
 
 const {logger} = require('./utilities/logger');
 // these are custom errors we've created
@@ -30,6 +31,21 @@ app.get('*', russianRoulette);
 // YOUR MIDDLEWARE FUNCTION should be activated here using
 // `app.use()`. It needs to come BEFORE the `app.use` call
 // below, which sends a 500 and error message to the client
+
+app.use((err, req, res, next) => {
+  var emailData = {
+    from: process.env.ALERT_FROM_EMAIL,
+    to: process.env.ALERT_TO_EMAIL,
+    name: process.env.ALERT_FROM_NAME,
+    subject: "ALERT: a " + err.name + " occured.",
+    text: err.message + " " + err.stack,
+    html: "<p>" + err.message + " " + err.stack + "</p>"
+  };
+  console.log(err.name);
+  if (err.name !== 'BizzError') {
+    sendEmail(emailData);
+  }
+});
 
 app.use((err, req, res, next) => {
   logger.error(err);
